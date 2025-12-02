@@ -1,45 +1,58 @@
 import axios from 'axios'
 
+// Detectar URL según entorno (CRA usa process.env)
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1'
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
 // Attach JWT token from localStorage to every request if present
-api.interceptors.request.use((config) => {
-  try {
-    const url = config.url || ''
-    // Do not attach Authorization header for auth endpoints (login/register)
-    if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/')) {
-      return config
-    }
+api.interceptors.request.use(
+  (config) => {
+    try {
+      const url = config.url || ''
 
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers = config.headers || {}
-      config.headers.Authorization = `Bearer ${token}`
-    }
-  } catch (e) {
-    // ignore
-  }
-  return config
-}, (error) => Promise.reject(error))
+      // Do not attach Authorization header for login/register
+      if (
+        url.includes('/auth/login') ||
+        url.includes('/auth/register') ||
+        url.includes('/auth/')
+      ) {
+        return config
+      }
 
-// Handle 401/403 responses (token expired or invalid)
-api.interceptors.response.use((response) => {
-  return response
-}, (error) => {
-  if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-    // Token expired or invalid - clear local storage and redirect to login
-    localStorage.removeItem('token')
-    localStorage.removeItem('auth_user')
-    // Optional: redirect to login page
-    // window.location.href = '/login'
-    console.warn('Token expired or invalid - please login again')
+      const token = localStorage.getItem('token')
+      if (token) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    } catch (e) {
+      // ignore
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Handle 401/403
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response &&
+      (error.response.status === 401 || error.response.status === 403)
+    ) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('auth_user')
+      console.warn('Token expirado o inválido — inicia sesión nuevamente')
+    }
+    return Promise.reject(error)
   }
-  return Promise.reject(error)
-})
+)
 
 export default api
