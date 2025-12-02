@@ -72,15 +72,22 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
+        @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList(frontendOrigin, "http://localhost:3000", "http://localhost:3001", "https://dsy-1104-benjamin-mora-evaluacion3-panda-gamers-prue-56lzu7vb.vercel.app"));
+
+        // IMPORTANTE: evitar problemas entre dominios
+        config.setAllowCredentials(false);
+
+        // Permitir TODOS los orígenes (sirve para todas las URLs de Vercel)
+        config.addAllowedOriginPattern("*");
+
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 }
