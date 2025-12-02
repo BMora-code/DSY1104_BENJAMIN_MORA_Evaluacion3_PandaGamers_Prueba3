@@ -1,8 +1,7 @@
 import axios from 'axios'
 
-// Detectar URL según entorno (CRA usa process.env)
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1'
+// SIEMPRE usar la variable del entorno
+const API_BASE_URL = process.env.REACT_APP_API_URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,29 +10,25 @@ const api = axios.create({
   }
 })
 
-// Attach JWT token from localStorage to every request if present
+// Attach JWT token from localStorage to every request except auth
 api.interceptors.request.use(
   (config) => {
-    try {
-      const url = config.url || ''
+    const url = config.url || ''
 
-      // Do not attach Authorization header for login/register
-      if (
-        url.includes('/auth/login') ||
-        url.includes('/auth/register') ||
-        url.includes('/auth/')
-      ) {
-        return config
-      }
-
-      const token = localStorage.getItem('token')
-      if (token) {
-        config.headers = config.headers || {}
-        config.headers.Authorization = `Bearer ${token}`
-      }
-    } catch (e) {
-      // ignore
+    if (
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/')
+    ) {
+      return config
     }
+
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers = config.headers || {}
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
     return config
   },
   (error) => Promise.reject(error)
@@ -49,7 +44,6 @@ api.interceptors.response.use(
     ) {
       localStorage.removeItem('token')
       localStorage.removeItem('auth_user')
-      console.warn('Token expirado o inválido — inicia sesión nuevamente')
     }
     return Promise.reject(error)
   }
